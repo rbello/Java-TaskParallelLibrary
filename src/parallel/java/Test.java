@@ -1,12 +1,45 @@
 package parallel.java;
 
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 public class Test {
 
 	public static void main(String[] args) {
 		
+		//testSimple();
+		
+		int c = 50;
+		
+		while (c-- > 0) {
+			List<Integer> tmp = new ArrayList<>();
+			Parallel.For(0, 500, (index) -> { tmp.add(index); });
+	
+			int size = tmp.size();
+			if (size != 500) System.err.println("Taille d'initialisation invalide (" + size + ", " + tmp.size() + ")");
+		}
+		
+//		sleepRandom(2000);
+		
+//		System.out.println(tmp.size());
+		
+//		Parallel.ForEach(tmp, (index) -> {
+//			if (index == null) System.out.println("?");
+//		});
+		
+//		int sum = tmp.stream().mapToInt(Integer::intValue).sum();
+		
+		//int midsum = tmp.stream().filter(e -> true).collect(Collectors.summingInt(Integer::intValue));
+		
+//		System.out.println(sum);
+		//System.out.println(midsum);
+		
+		
+	}
+
+	protected static void testSimple() {
 		String[] data = new String[] { "Apple", "Orange", "Cherry", "Banana", "Perry", "Fig" };
 		
 		// Execute the task on each data
@@ -44,7 +77,6 @@ public class Test {
 			}
 		);
 		stats();
-		
 	}
 
 	private static void stats() {

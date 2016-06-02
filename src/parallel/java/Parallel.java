@@ -3,31 +3,12 @@ package parallel.java;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Iterator;
-import java.util.LinkedList;
-import java.util.List;
 import java.util.concurrent.Callable;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-import java.util.concurrent.ThreadFactory;
 import java.util.function.Function;
 
 public class Parallel {
 	
     private static final int NUM_CORES = Runtime.getRuntime().availableProcessors();
-
-    /**
-     * Executes a foreach loop in which iterations may run in parallel.
-     * 
-     * @param elements Array of data
-     * @param operation Operation to perform on each data
-     */
-    public static <T> void ForEach(T[] elements, Function<T, ?> operation) {
-    	ForEach(Arrays.asList(elements), operation);
-    }
-    
-    public static <T> void For(T initializationValue, Function<T, Boolean> condition, Function<T, T> afterThought, ParameterizedRunnable<T> operation) {
-    	execute(createCallables(initializationValue, condition, afterThought, operation));
-    }
 
 	/**
      * Executes a foreach loop in which iterations may run in parallel.
@@ -35,8 +16,22 @@ public class Parallel {
      * @param elements Array of data
      * @param operation Operation to perform on each data
      */
+    
+    
     public static <T> void ForEach(T[] elements, ParameterizedRunnable<T> operation) {
     	ForEach(elements, NUM_CORES * 2, operation);
+    }
+
+    public static <T> void ForEach(T[] elements, Function<T, ?> operation) {
+    	ForEach(Arrays.asList(elements), operation);
+    }
+    
+    public static <T> void ForEach(Collection<T> elements, ParameterizedRunnable<T> operation) {
+    	Functions.execute(Functions.createCallables(elements.iterator(), operation), NUM_CORES * 2);
+    }
+    
+    public static <T> void For(T initializationValue, Function<T, Boolean> condition, Function<T, T> afterThought, ParameterizedRunnable<T> operation) {
+    	execute(Functions.createCallables(initializationValue, condition, afterThought, operation));
     }
     
     public static <T> void ForEach(T[] elements, int corePoolSize, ParameterizedRunnable<T> operation) {
@@ -51,35 +46,14 @@ public class Parallel {
     }
     
     public static <T> void ForEach(final Iterable<T> elements, int corePoolSize, final Function<T, ?> operation) {
-        execute(createCallables(elements, operation), corePoolSize);
+    	Functions.execute(Functions.createCallables(elements, operation), corePoolSize);
     }
 
     protected static void execute(Collection<Callable<Void>> tasks) {
-    	execute(tasks, NUM_CORES * 2);
+    	Functions.execute(tasks, NUM_CORES * 2);
     }
     
-    protected static void execute(Collection<Callable<Void>> tasks, int corePoolSize) {
-		try {
-        	
-        	// Create pool
-        	ExecutorService forPool = Executors.newFixedThreadPool(corePoolSize, new ThreadFactory() {
-        		int i = 0;
-				public Thread newThread(Runnable r) {
-					return new Thread(r, "Parallel(" + i++ + ")");
-				}
-			});
-        	
-            // invokeAll blocks for us until all submitted tasks in the call complete
-            forPool.invokeAll(tasks);
-            
-            // On arrête le pool
-            forPool.shutdown();
-            
-        }
-        catch (InterruptedException e) {
-            return;
-        }
-	}
+
     
     /**
      * Executes a for loop in which iterations may run in parallel.
@@ -108,42 +82,6 @@ public class Parallel {
     		return null;
     	});
     }
-
-	/**
-	 * Utility method to generate a list of callable operations from the list of given items.
-	 * This method will generate as much function call that there are elements in the elements list.
-	 * 
-	 * @param elements
-	 * @param operation
-	 * @return the generated list
-	 */
-    protected static <T> Collection<Callable<Void>> createCallables(final Iterable<T> elements, final Function<T, ?> operation) {
-        List<Callable<Void>> callables = new LinkedList<>();
-        for (final T elem : elements) {
-            callables.add(() -> {
-            	operation.apply(elem);
-            	return null;
-            });
-        }
-        return callables;
-    }
-    
-    private static <T> Collection<Callable<Void>> createCallables(T initializationValue, Function<T, Boolean> condition, Function<T, T> afterThought, ParameterizedRunnable<T> operation) {
-    	List<Callable<Void>> callables = new LinkedList<>();
-    	// Condition
-    	while (condition.apply(initializationValue)) {
-    		// Current value
-    		final T var = initializationValue;
-    		// Create job
-    		callables.add(() -> {
-    			operation.run(var);
-    			return null;
-    		});
-    		// Post-condition
-    		initializationValue = afterThought.apply(initializationValue);
-    	}
-		return callables;
-	}
 
 	public static <T> void Chunk(final Collection<T> elements, int chunkSize, final Function<T, ?> operation) {
 		//elements.sp
